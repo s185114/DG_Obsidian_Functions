@@ -1,0 +1,1 @@
+# DG_Obsidian_Functions
