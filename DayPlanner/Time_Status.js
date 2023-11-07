@@ -15,8 +15,11 @@ function sumTable(data) {
 	let header = ["Task", "Duration", "Time"];
 	let body = [];
 	for (const taskName in summary) {
-		if (taskName === "fri") continue;
 		const [dur, clock] = summary[taskName];
+
+		if (taskName === "fri") continue;
+		if (Number.isNaN(dur)) continue;
+
 		const duration = formatDuration(dur);
 		const checkbox = `<input type="checkbox" ${clock 
 		? 'checked' : ''}>`;
@@ -64,7 +67,10 @@ function findTotal(dict, done = false) {
 	let sum = 0;
 	
 	for (const key in dict) {
-		sum += dict[key][0];
+		const dur = dict[key][0];
+
+		if(Number.isNaN(dur)) continue;
+		sum += dur;
 	}
 	return sum;
 }
