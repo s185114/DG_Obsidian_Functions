@@ -1,8 +1,11 @@
 sumTable(input);
 
 
-function sumTable(data) {
-	const tasks = mapTasks(data)
+function sumTable(input) {
+  const isSimple = Array.isArray(input);
+	const tasks = isSimple ? mapTasks(input) : mapTasks(input.data);
+  const unwantedTasks = isSimple ? [] : input.ignore ?? [];
+  
 	let summary = {};
 	tasks.forEach(task => {
 	        const dur = calculateDuration(task.startTime, task.endTime);
@@ -12,7 +15,7 @@ function sumTable(data) {
 	    });
 
   const validTaskNames = Object.keys(summary).filter(taskName => 
-    taskName !== "fri" && !Number.isNaN(summary[taskName][0])
+    !unwantedTasks.contains(taskName) && !Number.isNaN(summary[taskName][0])
   );
 
 	// Prepare data for dv.table
