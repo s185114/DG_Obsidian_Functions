@@ -10,21 +10,20 @@ function sumTable(data) {
 	        summary[task.name][0] += dur;
 	        summary[task.name][1] = summary[task.name][1] || task.isTime;
 	    });
-	
+
+  const validTaskNames = Object.keys(summary).filter(taskName => 
+    taskName !== "fri" && !Number.isNaN(summary[taskName][0])
+  );
+
 	// Prepare data for dv.table
 	let header = ["Task", "Duration", "Time"];
-	let body = [];
-	for (const taskName in summary) {
+	let body = validTaskNames.map(taskName => {
 		const [dur, clock] = summary[taskName];
-
-		if (taskName === "fri") continue;
-		if (Number.isNaN(dur)) continue;
-
 		const duration = formatDuration(dur);
 		const checkbox = `<input type="checkbox" ${clock 
 		? 'checked' : ''}>`;
-		body.push([taskName, duration, checkbox]);
-	}
+		return [taskName, duration, checkbox];
+	});
 	body.push(["Total", formatDuration(findTotal(summary)), ""]);
 	return dv.table(header, body);
 }
