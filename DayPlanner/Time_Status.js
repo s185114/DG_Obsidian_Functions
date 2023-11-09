@@ -55,15 +55,10 @@ function mapTasks(taskArray) {
 }
 
 function calculateDuration(startTime, endTime) {
-    const [startHours, startMinutes] = startTime.split(":").map(Number);
-    const [endHours, endMinutes] = endTime.split(":").map(Number);
-    const startTotalMinutes = startHours * 60 + startMinutes;
-    const endTotalMinutes = endHours * 60 + endMinutes;
-    let durationMinutes = endTotalMinutes - startTotalMinutes;
-    while (durationMinutes < 0) {
-        durationMinutes += 24 * 60;
-    }
-    return durationMinutes;
+  var startDate = new Date('1970-01-01T' + startTime + 'Z');
+  var endDate = new Date('1970-01-01T' + endTime + 'Z');
+  if (endDate < startDate) endDate.setDate(endDate.getDate() + 1);
+  return (endDate - startDate) / (60 * 1000); // Convert milliseconds to minutes
 }
 
 function formatDuration(durationMinutes) {
