@@ -6,29 +6,36 @@ function sumTable(input) {
 	const tasks = isSimple ? mapTasks(input) : mapTasks(input.data);
   const unwantedTasks = isSimple ? [] : input.ignore ?? [];
   
-	let summary = {};
-	tasks.forEach(task => {
-	        const dur = calculateDuration(task.startTime, task.endTime);
-	        if (!summary[task.name]) summary[task.name] = [0, false];
-	        summary[task.name][0] += dur;
-	        summary[task.name][1] = summary[task.name][1] || task.isTime;
-	    });
-
+	let summary = prepData(tasks);
   const validTaskNames = Object.keys(summary).filter(taskName => 
     !unwantedTasks.contains(taskName) && !Number.isNaN(summary[taskName][0])
   );
 
-	// Prepare data for dv.table
-	let header = ["Task", "Duration", "Time"];
-	let body = validTaskNames.map(taskName => {
-		const [dur, clock] = summary[taskName];
-		const duration = formatDuration(dur);
-		const checkbox = `<input type="checkbox" ${clock 
-		? 'checked' : ''}>`;
-		return [taskName, duration, checkbox];
-	});
-	body.push(["Total", formatDuration(findTotal(summary)), ""]);
-	return dv.table(header, body);
+	return constructDvTable(validTaskNames, summary);
+}
+
+function prepData(tasks) {
+    let summary = {};
+    tasks.forEach(task => {
+            const dur = calculateDuration(task.startTime, task.endTime);
+            if (!summary[task.name]) summary[task.name] = [0, false];
+            summary[task.name][0] += dur;
+            summary[task.name][1] = summary[task.name][1] || task.isTime;
+        });
+    return summary;
+}
+
+function constructDvTable(validTaskNames, summary) {
+  let header = ["Task", "Duration", "Time"];
+  let body = validTaskNames.map(taskName => {
+    const [dur, clock] = summary[taskName];
+    const duration = formatDuration(dur);
+    const checkbox = `<input type="checkbox" ${clock 
+    ? 'checked' : ''}>`;
+    return [taskName, duration, checkbox];
+  });
+  body.push(["Total", formatDuration(findTotal(validTaskNames, summary)), ""]);
+  return dv.table(header, body);
 }
 
 function mapTasks(taskArray) {
@@ -65,14 +72,6 @@ function formatDuration(durationMinutes) {
     return `${hours}h ${minutes}m`;
 }
 
-function findTotal(dict, done = false) {
-	let sum = 0;
-	
-	for (const key in dict) {
-		const dur = dict[key][0];
-
-		if(Number.isNaN(dur)) continue;
-		sum += dur;
-	}
-	return sum;
+function findTotal(validKeys, dict) {
+	return validKeys.map(key => dict[key][0]).reduce(((a,b)=>a+b), 0);
 }
