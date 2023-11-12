@@ -5,7 +5,9 @@ function sumTable(input) {
   const isSimple = Array.isArray(input);
 	const tasks = isSimple ? mapTasks(input) : mapTasks(input.data);
   const unwantedTasks = isSimple ? [] : input.ignore ?? [];
+  const simplify = isSimple ? false : input.simplify ?? false;
   
+  if (simplify) tasks.forEach(e=>e.name = e.name.split('-')[0].trim())
 	let summary = prepData(tasks);
   const validTaskNames = Object.keys(summary).filter(taskName => 
     !unwantedTasks.contains(taskName) && !Number.isNaN(summary[taskName][0])
@@ -17,11 +19,11 @@ function sumTable(input) {
 function prepData(tasks) {
     let summary = {};
     tasks.forEach(task => {
-            const dur = calculateDuration(task.startTime, task.endTime);
-            if (!summary[task.name]) summary[task.name] = [0, false];
-            summary[task.name][0] += dur;
-            summary[task.name][1] = summary[task.name][1] || task.isTime;
-        });
+        const dur = calculateDuration(task.startTime, task.endTime);
+        if (!summary[task.name]) summary[task.name] = [0, false];
+        summary[task.name][0] += dur;
+        summary[task.name][1] = summary[task.name][1] || task.isTime;
+    });
     return summary;
 }
 
@@ -34,14 +36,14 @@ function constructDvTable(validTaskNames, summary) {
     ? 'checked' : ''}>`;
     return [taskName, duration, checkbox];
   });
-  body.push(["Total", formatDuration(findTotal(validTaskNames, summary)), ""]);
+  body.push(["Total", formatDuration(findTotal(validTaskNames, summary)), formatDuration(findTotal(validTaskNames, summary, true))]);
   return dv.table(header, body);
 }
 
 function mapTasks(taskArray) {
     return taskArray.map((taskString, index) => {
         const [time, ...taskNameParts] = taskString.split(' ');
-        const name = taskNameParts.join(' ').replace('⏰','');
+        const name = taskNameParts.join(' ').replace('⏰','').trim();
         const isTime = taskString.includes('⏰');
         const endTime = index < taskArray.length - 1 
         ? taskArray[index + 1].split(' ')[0] : time;
@@ -67,6 +69,7 @@ function formatDuration(durationMinutes) {
     return `${hours}h ${minutes}m`;
 }
 
-function findTotal(validKeys, dict) {
-	return validKeys.map(key => dict[key][0]).reduce(((a,b)=>a+b), 0);
+function findTotal(validKeys, dict, time = false) {
+  const f = e => !time ? e[0] : e[1] ? e[0] : 0
+	return validKeys.map(key => f(dict[key])).reduce(((a,b)=>a+b), 0);
 }
