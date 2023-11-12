@@ -2,21 +2,35 @@ sumTable(input);
 
 
 function sumTable(input) {
-  const isSimple = Array.isArray(input);
-	const tasks = isSimple ? mapTasks(input) : mapTasks(input.data);
-  const unwantedTasks = isSimple ? [] : input.ignore ?? [];
-  const simplify = isSimple ? false : input.simplify ?? false;
-  
-  if (simplify) tasks.forEach(e=>e.name = e.name.split('-')[0].trim())
-	let summary = prepData(tasks);
+  const { data, ignore, simplify, subtasks } = processInput(input);
+  const tasks = mapTasks(data);
+
+	let summary = prepData(tasks, simplify);
   const validTaskNames = Object.keys(summary).filter(taskName => 
-    !unwantedTasks.contains(taskName) && !Number.isNaN(summary[taskName][0])
+    !ignore.contains(taskName) && !Number.isNaN(summary[taskName][0])
   );
 
 	return constructDvTable(validTaskNames, summary);
 }
 
-function prepData(tasks) {
+function processInput(input) {
+  if (Array.isArray(input)) {
+      return { data: input, ignore: [], simplify: false, subtasks: true };
+  } else {
+      const filteredData = input.subtasks ?? true
+          ? input.data : input.data.filter(e => e.parent == null);
+      return {
+          data: filteredData.map(e => e.text),
+          ignore: input.ignore ?? [],
+          simplify: input.simplify ?? false,
+          subtasks: input.subtasks ?? true
+      };
+  }
+}
+
+function prepData(tasks, simplify=false) {
+    if (simplify) tasks.forEach(e=>e.name = e.name.split('-')[0].trim());
+  
     let summary = {};
     tasks.forEach(task => {
         const dur = calculateDuration(task.startTime, task.endTime);
