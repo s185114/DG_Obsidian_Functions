@@ -5,11 +5,7 @@ function sumTable(input) {
   const { data, ignore, simplify, subtasks } = processInput(input);
   const tasks = mapTasks(data);
 
-	let summary = prepData(tasks, simplify);
-  const validTaskNames = Object.keys(summary).filter(taskName => 
-    !ignore.contains(taskName) && !Number.isNaN(summary[taskName][0])
-  );
-
+	let [validTaskNames, summary] = prepData(tasks, ignore, simplify);
 	return constructDvTable(validTaskNames, summary);
 }
 
@@ -28,7 +24,7 @@ function processInput(input) {
   }
 }
 
-function prepData(tasks, simplify=false) {
+function prepData(tasks, ignore = [], simplify=false) {
     if (simplify) tasks.forEach(e=>e.name = e.name.split('-')[0].trim());
   
     let summary = {};
@@ -38,7 +34,11 @@ function prepData(tasks, simplify=false) {
         summary[task.name][0] += dur;
         summary[task.name][1] = summary[task.name][1] || task.isTime;
     });
-    return summary;
+
+    const validTaskNames = Object.keys(summary).filter(taskName => 
+      !ignore.contains(taskName) && !Number.isNaN(summary[taskName][0])
+    );
+    return [validTaskNames, summary];
 }
 
 function constructDvTable(validTaskNames, summary) {
