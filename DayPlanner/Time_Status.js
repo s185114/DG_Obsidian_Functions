@@ -84,6 +84,6 @@ function formatDuration(durationMinutes) {
 }
 
 function findTotal(validKeys, dict, time = false) {
-  const f = e => !time ? e[0] : e[1] ? e[0] : 0
+  const f = e => !time || e[1] ? e[0] : 0
 	return validKeys.map(key => f(dict[key])).reduce(((a,b)=>a+b), 0);
 }
