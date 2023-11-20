@@ -56,11 +56,13 @@ function constructDvTable(validTaskNames, summary) {
 
 function mapTasks(taskArray) {
     return taskArray.map((taskString, index) => {
-        const [time, ...taskNameParts] = taskString.split(' ');
-        const name = taskNameParts.join(' ').replace('⏰','').trim();
+        const q = /(\d{2}:\d{2})(\s?-\s?(\d{2}:\d{2}))?/;
+        const [_1, time, _2, time2, task] = taskString.split(q);
+
+        const name = task.replace('⏰','').trim();
         const isTime = taskString.includes('⏰');
-        const endTime = index < taskArray.length - 1 
-        ? taskArray[index + 1].split(' ')[0] : time;
+        const endTime = time2 ? time2 :
+            taskArray[index + 1]?.split(q)[1] ?? time;
         return {
             name,
             startTime: time,
