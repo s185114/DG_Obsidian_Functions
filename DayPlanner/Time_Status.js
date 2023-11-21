@@ -13,11 +13,12 @@ function sumTable(input) {
 
 function processInput(input) {
   if (Array.isArray(input)) {
-    return { data: input, ignore: [], simplify: false, subtasks: true };
+    return { data: input, ignore: [], simplify: false, subtasks: Infinity };
   } else {
-    const copy = {...input};
-    if(copy.subtasks) copy.data = copy.data.filter(e => e.parent == null);
-    copy.data = copy.data.map(e => e.text);
+    const copy = { ...input, subtasks: input.subtasks ?? Infinity };
+    copy.data = copy.data
+      .filter(e => filterSubTasks(e, copy.data) <= copy.subtasks)
+      .map(e => e.text);
     return copy;
   }
 }
@@ -74,6 +75,12 @@ function constructDvTable(validTaskNames, summary) {
 
 //#endregion
 //#region support functions
+
+function filterSubTasks(task, tasks, depth = 0) {
+  if (task?.parent == null) return depth;
+  const parentTask = tasks.find(parent => parent.line === task.parent);
+  return filterSubTasks(parentTask, tasks, depth + 1);
+}
 
 function calculateDuration(startTime, endTime) {
   var startDate = new Date(`1970-01-01T${startTime}Z`);

@@ -12,7 +12,7 @@ await dv.view("_Functions/Time_Status", {data: a, ignore: ["taskname1","taskname
 data:     taskObj[]  #mandatory
 ignore:   string[]   #default []
 simplify: bool       #default false
-subtasks: bool | int #default true
+subtasks: int        #default all
 ```
 
 ### Features
@@ -22,8 +22,8 @@ subtasks: bool | int #default true
     - Simplyfy the view by splitting all names on '-'.
     - F.x. "Task1" & "Task1 - meeting" would both show up as "Task1".
 - Subtasks toggle
-    - If false show only root-tasks, if true include sub tasks.
-    - TODO: Alternatively give it a positive number depicting how many levels of subtasks it should show.
+    - Give it a positive number depicting how many levels of subtasks it should show.
+    - If 0 show only root-tasks, if no value all sub tasks will be includeded.
 
 
 ### Legacy mode:
