@@ -30,13 +30,13 @@ function prepData(tasks, ignore = [], simplify=false) {
     let summary = {};
     tasks.forEach(task => {
         const dur = calculateDuration(task.startTime, task.endTime);
-        if (!summary[task.name]) summary[task.name] = [0, false];
-        summary[task.name][0] += dur;
-        summary[task.name][1] = summary[task.name][1] || task.isTime;
+        if (!summary[task.name]) summary[task.name] = { dur: 0, check: false };
+        summary[task.name].dur += dur;
+        summary[task.name].check = summary[task.name].check || task.isTime;
     });
 
     const validTaskNames = Object.keys(summary).filter(taskName => 
-      !ignore.contains(taskName) && !Number.isNaN(summary[taskName][0])
+      !ignore.contains(taskName) && !Number.isNaN(summary[taskName].dur)
     );
     return [validTaskNames, summary];
 }
@@ -44,13 +44,13 @@ function prepData(tasks, ignore = [], simplify=false) {
 function constructDvTable(validTaskNames, summary) {
   let header = ["Task", "Duration", "Time"];
   let body = validTaskNames.map(taskName => {
-    const [dur, clock] = summary[taskName];
+    const { dur, check } = summary[taskName];
     const duration = formatDuration(dur);
-    const checkbox = `<input type="checkbox" ${clock 
-    ? 'checked' : ''}>`;
+    const checkbox = `<input type="checkbox" ${check ? 'checked' : ''}>`;
     return [taskName, duration, checkbox];
   });
-  body.push(["Total", formatDuration(findTotal(validTaskNames, summary)), formatDuration(findTotal(validTaskNames, summary, true))]);
+  const total = (time=false) => formatDuration(findTotal(validTaskNames, summary, time));
+  body.push(["Total", total(), total(true)]);
   return dv.table(header, body);
 }
 
@@ -59,7 +59,7 @@ function mapTasks(taskArray) {
         const q = /(\d{2}:\d{2})(\s?-\s?(\d{2}:\d{2}))?/;
         const [_1, time, _2, time2, task] = taskString.split(q);
 
-        const name = task.replace('⏰','').trim();
+        const name = task?.replace('⏰','').trim();
         const isTime = taskString.includes('⏰');
         const endTime = time2 ? time2 :
             taskArray[index + 1]?.split(q)[1] ?? time;
@@ -73,8 +73,8 @@ function mapTasks(taskArray) {
 }
 
 function calculateDuration(startTime, endTime) {
-  var startDate = new Date('1970-01-01T' + startTime + 'Z');
-  var endDate = new Date('1970-01-01T' + endTime + 'Z');
+  var startDate = new Date(`1970-01-01T${startTime}Z`);
+  var endDate = new Date(`1970-01-01T${endTime}Z`);
   if (endDate < startDate) endDate.setDate(endDate.getDate() + 1);
   return (endDate - startDate) / (60 * 1000); // Convert milliseconds to minutes
 }
@@ -86,6 +86,6 @@ function formatDuration(durationMinutes) {
 }
 
 function findTotal(validKeys, dict, time = false) {
-  const f = e => !time || e[1] ? e[0] : 0
+  const f = e => !time || e.check ? e.dur : 0
 	return validKeys.map(key => f(dict[key])).reduce(((a,b)=>a+b), 0);
 }
