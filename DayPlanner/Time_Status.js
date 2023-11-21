@@ -3,7 +3,7 @@ sumTable(input);
 
 function sumTable(input) {
   const { data, ignore, simplify, subtasks } = processInput(input);
-  const tasks = mapTasks(data);
+  const tasks = mapTasks(data.values); //.values is to remove the proxy layer around the array
 
   let [validTaskNames, summary] = prepData(tasks, ignore, simplify);
   return constructDvTable(validTaskNames, summary);
@@ -15,13 +15,13 @@ function processInput(input) {
   if (Array.isArray(input)) {
     return { data: input, ignore: [], simplify: false, subtasks: true };
   } else {
-    const filteredData = input.subtasks ?? true
-      ? input.data : input.data.filter(e => e.parent == null);
+    const { data, ignore = [], simplify = false, subtasks = true } = input;
+    const filteredData = subtasks ? data : data.filter(e => e.parent == null);
     return {
       data: filteredData.map(e => e.text),
-      ignore: input.ignore ?? [],
-      simplify: input.simplify ?? false,
-      subtasks: input.subtasks ?? true
+      ignore,
+      simplify,
+      subtasks
     };
   }
 }
@@ -47,16 +47,18 @@ function mapTasks(taskArray) {
 function prepData(tasks, ignore = [], simplify = false) {
   if (simplify) tasks.forEach(e => e.name = e.name.split('-')[0].trim());
 
-  let summary = {};
-  tasks.forEach(task => {
+  let summary = tasks.reduce((acc, task) => {
     const dur = calculateDuration(task.startTime, task.endTime);
-    if (!summary[task.name]) summary[task.name] = { dur: 0, check: false };
-    summary[task.name].dur += dur;
-    summary[task.name].check = summary[task.name].check || task.isTime;
-  });
+
+    if (!acc[task.name]) acc[task.name] = { dur: 0, check: false };
+    acc[task.name].dur += dur;
+    acc[task.name].check = acc[task.name].check || task.isTime;
+
+    return acc;
+  }, {});
 
   const validTaskNames = Object.keys(summary).filter(taskName =>
-    !ignore.contains(taskName) && !Number.isNaN(summary[taskName].dur)
+    !ignore.includes(taskName) && !Number.isNaN(summary[taskName].dur)
   );
   return [validTaskNames, summary];
 }
@@ -92,7 +94,7 @@ function formatDuration(durationMinutes) {
 
 function findTotal(validKeys, dict, time = false) {
   const f = e => !time || e.check ? e.dur : 0
-  return validKeys.map(key => f(dict[key])).reduce(((a, b) => a + b), 0);
+  return validKeys.map(key => f(dict[key])).reduce((a, b) => a + b, 0);
 }
 
 //#endregion
