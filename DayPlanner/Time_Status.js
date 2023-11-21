@@ -15,14 +15,10 @@ function processInput(input) {
   if (Array.isArray(input)) {
     return { data: input, ignore: [], simplify: false, subtasks: true };
   } else {
-    const { data, ignore = [], simplify = false, subtasks = true } = input;
-    const filteredData = subtasks ? data : data.filter(e => e.parent == null);
-    return {
-      data: filteredData.map(e => e.text),
-      ignore,
-      simplify,
-      subtasks
-    };
+    const copy = {...input};
+    if(copy.subtasks) copy.data = copy.data.filter(e => e.parent == null);
+    copy.data = copy.data.map(e => e.text);
+    return copy;
   }
 }
 
