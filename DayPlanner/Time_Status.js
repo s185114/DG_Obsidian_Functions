@@ -5,8 +5,8 @@ function sumTable(input) {
   const { data, ignore, simplify, subtasks } = processInput(input);
   const tasks = mapTasks(data.values); //.values is to remove the proxy layer around the array
 
-  let [validTaskNames, summary] = prepData(tasks, ignore, simplify);
-  return constructDvTable(validTaskNames, summary);
+  const summary = prepData(tasks, ignore, simplify);
+  return constructDvTable(summary);
 }
 
 //#region main functions
@@ -47,6 +47,8 @@ function prepData(tasks, ignore = [], simplify = false) {
   let summary = tasks.reduce((acc, task) => {
     const dur = calculateDuration(task.startTime, task.endTime);
 
+    if (ignore.includes(task.name) || Number.isNaN(dur)) return acc;
+
     if (!acc[task.name]) acc[task.name] = { dur: 0, check: false };
     acc[task.name].dur += dur;
     acc[task.name].check = acc[task.name].check || task.isTime;
@@ -54,21 +56,18 @@ function prepData(tasks, ignore = [], simplify = false) {
     return acc;
   }, {});
 
-  const validTaskNames = Object.keys(summary).filter(taskName =>
-    !ignore.includes(taskName) && !Number.isNaN(summary[taskName].dur)
-  );
-  return [validTaskNames, summary];
+  return summary;
 }
 
-function constructDvTable(validTaskNames, summary) {
+function constructDvTable(summary) {
   let header = ["Task", "Duration", "Time"];
-  let body = validTaskNames.map(taskName => {
-    const { dur, check } = summary[taskName];
-    const duration = formatDuration(dur);
-    const checkbox = `<input type="checkbox" ${check ? 'checked' : ''}>`;
-    return [taskName, duration, checkbox];
-  });
-  const total = (time = false) => formatDuration(findTotal(validTaskNames, summary, time));
+  let body = Object.entries(summary)
+    .map(([taskName, { dur, check }]) => {
+      const duration = formatDuration(dur);
+      const checkbox = `<input type="checkbox" ${check ? 'checked' : ''}>`;
+      return [taskName, duration, checkbox];
+    });
+  const total = (time = false) => formatDuration(findTotal(summary, time));
   body.push(["Total", total(), total(true)]);
   return dv.table(header, body);
 }
@@ -95,9 +94,9 @@ function formatDuration(durationMinutes) {
   return `${hours}h ${minutes}m`;
 }
 
-function findTotal(validKeys, dict, time = false) {
+function findTotal(dict, time = false) {
   const f = e => !time || e.check ? e.dur : 0
-  return validKeys.map(key => f(dict[key])).reduce((a, b) => a + b, 0);
+  return Object.values(dict).map(val => f(val)).reduce((a, b) => a + b, 0);
 }
 
 //#endregion
